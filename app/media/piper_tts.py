@@ -11,4 +11,4 @@ def synthesize_with_piper(text: str, output_wav: Path, settings: Settings) -> No
     args = [settings.piper_binary_path, "--model", settings.piper_voice_path, "--output_file", str(output_wav)]
     if settings.piper_config_path:
         args.extend(["--config", settings.piper_config_path])
-    run_command(args, input_text=text)
+    run_command(args, input_text=text, timeout_seconds=settings.command_timeout_seconds)

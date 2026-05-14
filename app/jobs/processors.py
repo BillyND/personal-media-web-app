@@ -26,12 +26,18 @@ def process_tiktok_job(job: Job, repository: JobRepository, settings: Settings) 
         raise ValueError("TikTok URL is required")
     output_dir = Path(job.output_dir)
     url = validate_tiktok_url(job.input_url)
-    video_path = download_tiktok_video(url, output_dir, settings.max_video_duration_seconds)
+    video_path = download_tiktok_video(
+        url,
+        output_dir,
+        settings.max_video_duration_seconds,
+        settings.max_download_bytes,
+        settings.command_timeout_seconds,
+    )
     audio_path = output_dir / "audio.mp3"
     transcript_path = output_dir / "transcript.txt"
     metadata_path = output_dir / "metadata.json"
 
-    extract_mp3(video_path, audio_path)
+    extract_mp3(video_path, audio_path, settings.command_timeout_seconds)
     transcribe_audio(audio_path, transcript_path, settings)
     metadata_path.write_text(json.dumps({"type": "tiktok", "source_url": url}, indent=2), encoding="utf-8")
 
@@ -56,7 +62,7 @@ def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> 
 
     input_path.write_text(text, encoding="utf-8")
     synthesize_with_piper(text, wav_path, settings)
-    convert_wav_to_mp3(wav_path, mp3_path)
+    convert_wav_to_mp3(wav_path, mp3_path, settings.command_timeout_seconds)
     metadata_path.write_text(
         json.dumps({"type": "tts", "voice": settings.piper_voice_path, "text_length": len(text)}, indent=2),
         encoding="utf-8",

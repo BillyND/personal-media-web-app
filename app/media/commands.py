@@ -1,8 +1,18 @@
 import subprocess
 
 
-def run_command(args: list[str], input_text: str | None = None) -> str:
-    result = subprocess.run(args, input=input_text, check=False, capture_output=True, text=True)
+def run_command(args: list[str], input_text: str | None = None, timeout_seconds: int = 300) -> str:
+    try:
+        result = subprocess.run(
+            args,
+            input=input_text,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Command timed out") from error
     if result.returncode != 0:
         message = result.stderr.strip() or result.stdout.strip() or "Command failed"
         raise RuntimeError(message[:1000])

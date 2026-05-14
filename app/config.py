@@ -1,6 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
+import hashlib
 import os
+import string
 
 from dotenv import load_dotenv
 
@@ -13,6 +15,13 @@ def _bool(value: str | None, default: bool = False) -> bool:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def _sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+UNSAFE_PASSWORD_HASHES = {_sha256(value) for value in {"change-me", "password", "secret"}}
+
+
 class Settings:
     def __init__(self) -> None:
         self.app_env = os.getenv("APP_ENV", "development")
@@ -23,6 +32,9 @@ class Settings:
         self.output_dir = Path(os.getenv("OUTPUT_DIR", str(self.data_dir / "outputs"))).resolve()
         self.database_path = self.data_dir / "app.db"
         self.max_video_duration_seconds = int(os.getenv("MAX_VIDEO_DURATION_SECONDS", "900"))
+        self.max_download_bytes = int(os.getenv("MAX_DOWNLOAD_BYTES", "524288000"))
+        self.command_timeout_seconds = int(os.getenv("COMMAND_TIMEOUT_SECONDS", "300"))
+        self.job_stale_minutes = int(os.getenv("JOB_STALE_MINUTES", "120"))
         self.auto_delete_days = int(os.getenv("AUTO_DELETE_DAYS", "30"))
         self.whisper_model = os.getenv("WHISPER_MODEL", "base")
         self.whisper_compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
@@ -39,6 +51,17 @@ class Settings:
             raise RuntimeError("SESSION_SECRET is required")
         if not self.app_password and not self.app_password_hash:
             raise RuntimeError("APP_PASSWORD or APP_PASSWORD_HASH is required")
+        if self.app_env == "production":
+            if self.session_secret.startswith("change-me") or len(self.session_secret) < 32:
+                raise RuntimeError("SESSION_SECRET is unsafe for production")
+            if self.app_password in {"change-me", "password", "secret"}:
+                raise RuntimeError("APP_PASSWORD is unsafe for production")
+            if self.app_password_hash:
+                is_sha256 = len(self.app_password_hash) == 64 and all(
+                    char in string.hexdigits for char in self.app_password_hash
+                )
+                if not is_sha256 or self.app_password_hash.lower() in UNSAFE_PASSWORD_HASHES:
+                    raise RuntimeError("APP_PASSWORD_HASH is unsafe for production")
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 

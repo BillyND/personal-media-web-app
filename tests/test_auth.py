@@ -33,3 +33,10 @@ def test_dashboard_requires_auth(monkeypatch, tmp_path):
     response = client.get("/", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/login"
+
+
+def test_missing_job_returns_404_after_login(monkeypatch, tmp_path):
+    client = make_client(monkeypatch, tmp_path)
+    client.post("/login", data={"password": "secret"}, follow_redirects=False)
+    response = client.get("/jobs/missing")
+    assert response.status_code == 404

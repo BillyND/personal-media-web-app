@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -88,6 +88,19 @@ class JobRepository:
                 "update jobs set status = ?, completed_at = ?, error_message = ? where id = ?",
                 (JOB_FAILED, utc_now(), error_message[:1000], job_id),
             )
+
+    def fail_stale_processing(self, stale_minutes: int) -> int:
+        cutoff = (datetime.now(UTC) - timedelta(minutes=stale_minutes)).isoformat()
+        with get_connection(self.settings) as connection:
+            cursor = connection.execute(
+                """
+                update jobs
+                set status = ?, completed_at = ?, error_message = ?
+                where status = ? and started_at < ?
+                """,
+                (JOB_FAILED, utc_now(), "Job interrupted and marked stale", JOB_PROCESSING, cutoff),
+            )
+            return cursor.rowcount
 
     def add_file(self, job_id: str, kind: str, path: Path) -> JobFile:
         file_id = uuid4().hex

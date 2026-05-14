@@ -47,6 +47,9 @@ def jobs_fragment(request: Request, settings: Settings = Depends(get_settings)):
 @router.get("/jobs/{job_id}", dependencies=[Depends(require_page_auth)])
 def job_detail(job_id: str, request: Request, settings: Settings = Depends(get_settings)):
     repository = JobRepository(settings)
-    job = repository.get_job(job_id)
+    try:
+        job = repository.get_job(job_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Job not found") from None
     files = repository.list_files(job_id)
     return templates.TemplateResponse(request, "partials/job-detail.html", {"job": job, "files": files})
