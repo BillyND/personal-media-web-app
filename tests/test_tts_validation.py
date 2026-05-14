@@ -5,7 +5,7 @@ import pytest
 
 from app.config import Settings
 from app.jobs.models import Job
-from app.jobs.processors import parse_tts_payload, process_tts_job
+from app.jobs.processors import parse_tts_payload, process_tts_job, strip_tts_symbols
 
 
 class DummyVoice:
@@ -62,6 +62,10 @@ def test_parse_tts_payload_supports_json_voice():
         "hello",
         "en_US-ryan-medium",
     )
+
+
+def test_strip_tts_symbols_removes_icons_and_emoji():
+    assert strip_tts_symbols("Hello 🔥 world ✅ #1") == "Hello world #1"
 
 
 def test_settings_include_vietnamese_tts_voice(monkeypatch, tmp_path):

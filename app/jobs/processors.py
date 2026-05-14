@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import unicodedata
 
 from app.config import Settings, get_settings
 from app.jobs.models import JOB_TIKTOK, JOB_TTS, Job
@@ -50,6 +51,7 @@ def process_tiktok_job(job: Job, repository: JobRepository, settings: Settings) 
 def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> None:
     text, voice_id = parse_tts_payload(job.input_text)
     voice = settings.get_tts_voice(voice_id)
+    text = strip_tts_symbols(text)
     if not text:
         raise ValueError("Text is required")
     if len(text) > settings.max_tts_text_length:
@@ -94,3 +96,8 @@ def parse_tts_payload(input_text: str | None) -> tuple[str, str | None]:
     if not isinstance(payload, dict):
         return raw, None
     return str(payload.get("text", "")).strip(), payload.get("voice_id")
+
+
+def strip_tts_symbols(text: str) -> str:
+    cleaned = "".join(char for char in text if unicodedata.category(char)[0] not in {"S", "C"})
+    return " ".join(cleaned.split())
