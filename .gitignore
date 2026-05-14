@@ -1,0 +1,10 @@
+.env
+.venv/
+venv/
+runtime/
+data/app.db
+data/outputs/
+backups/
+__pycache__/
+.pytest_cache/
+*.pyc

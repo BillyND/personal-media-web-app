@@ -1,0 +1,11 @@
+{% if job.status == 'done' %}
+  <div class="files">
+  {% for file in files %}
+    <a href="/files/{{ file.id }}">{{ file.kind }}</a>
+  {% endfor %}
+  </div>
+{% elif job.status == 'failed' %}
+  <span class="error">{{ job.error_message }}</span>
+{% else %}
+  <span class="muted">Đang xử lý...</span>
+{% endif %}

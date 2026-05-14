@@ -1,0 +1,25 @@
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Status</th>
+      <th>Created</th>
+      <th>Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for job in jobs %}
+    <tr>
+      <td>{{ job.type }}</td>
+      <td><span class="badge {{ job.status }}">{{ job.status }}</span></td>
+      <td>{{ job.created_at }}</td>
+      <td>
+        {% set files = files_by_job.get(job.id, []) %}
+        {% include "partials/job-detail.html" %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">Chưa có job nào.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

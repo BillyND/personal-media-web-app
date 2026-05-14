@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<header class="topbar">
+  <div>
+    <h1>Personal Media</h1>
+    <p>TikTok → MP4/MP3/Text và Text-to-Speech local.</p>
+  </div>
+  <form method="post" action="/logout"><button class="secondary" type="submit">Logout</button></form>
+</header>
+
+<section class="grid">
+  <article class="card">
+    <h2>TikTok Extractor</h2>
+    <p class="muted">Best-effort clean source, không cam kết mọi video đều no watermark.</p>
+    <form method="post" action="/jobs/tiktok" class="stack">
+      <input name="url" type="url" placeholder="https://www.tiktok.com/..." required>
+      <button type="submit">Tạo MP4 / MP3 / Text</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h2>Text to Speech</h2>
+    <p class="muted">Local/free bằng Piper. MVP xuất MP3.</p>
+    <form method="post" action="/jobs/tts" class="stack">
+      <textarea name="text" rows="8" placeholder="Nhập text làm voiceover..." required></textarea>
+      <button type="submit">Tạo MP3</button>
+    </form>
+  </article>
+</section>
+
+<section class="card">
+  <h2>Jobs / History</h2>
+  <div id="jobs-table" data-refresh-url="/jobs">
+    {% include "partials/jobs-table.html" %}
+  </div>
+</section>
+{% endblock %}
