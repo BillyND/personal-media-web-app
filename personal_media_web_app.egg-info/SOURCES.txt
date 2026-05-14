@@ -2,6 +2,7 @@ pyproject.toml
 app/__init__.py
 app/config.py
 app/main.py
+app/paths.py
 app/auth/__init__.py
 app/auth/dependencies.py
 app/auth/password.py

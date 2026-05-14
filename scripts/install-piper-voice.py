@@ -4,10 +4,26 @@ import shutil
 from huggingface_hub import hf_hub_download
 
 VOICE_REPO = "rhasspy/piper-voices"
-VOICE_ONNX = "en/en_US/ryan/medium/en_US-ryan-medium.onnx"
-VOICE_CONFIG = "en/en_US/ryan/medium/en_US-ryan-medium.onnx.json"
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 TARGET_DIR = PROJECT_DIR / "data" / "models" / "piper"
+VOICES = [
+    (
+        "en/en_US/ryan/medium/en_US-ryan-medium.onnx",
+        "en_US-ryan-medium.onnx",
+    ),
+    (
+        "en/en_US/ryan/medium/en_US-ryan-medium.onnx.json",
+        "en_US-ryan-medium.onnx.json",
+    ),
+    (
+        "vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx",
+        "vi_VN-vais1000-medium.onnx",
+    ),
+    (
+        "vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json",
+        "vi_VN-vais1000-medium.onnx.json",
+    ),
+]
 
 
 def download_voice(filename: str, target_name: str) -> None:
@@ -17,9 +33,9 @@ def download_voice(filename: str, target_name: str) -> None:
 
 
 def main() -> None:
-    download_voice(VOICE_ONNX, "en_US-ryan-medium.onnx")
-    download_voice(VOICE_CONFIG, "en_US-ryan-medium.onnx.json")
-    print(f"Piper voice installed in {TARGET_DIR}")
+    for filename, target_name in VOICES:
+        download_voice(filename, target_name)
+    print(f"Piper voices installed in {TARGET_DIR}")
 
 
 if __name__ == "__main__":

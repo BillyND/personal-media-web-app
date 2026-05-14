@@ -37,12 +37,17 @@ class JobRepository:
             raise KeyError(job_id)
         return Job.from_row(row)
 
-    def list_jobs(self, limit: int = 50) -> list[Job]:
+    def list_jobs(self, limit: int = 10, offset: int = 0) -> list[Job]:
         with get_connection(self.settings) as connection:
             rows = connection.execute(
-                "select * from jobs order by created_at desc limit ?", (limit,)
+                "select * from jobs order by created_at desc limit ? offset ?", (limit, offset)
             ).fetchall()
         return [Job.from_row(row) for row in rows]
+
+    def count_jobs(self) -> int:
+        with get_connection(self.settings) as connection:
+            row = connection.execute("select count(*) as total from jobs").fetchone()
+        return int(row["total"])
 
     def list_files(self, job_id: str) -> list[JobFile]:
         with get_connection(self.settings) as connection:

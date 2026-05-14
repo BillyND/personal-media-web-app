@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from math import ceil
+import json
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -24,23 +27,50 @@ def create_tiktok_job(url: str = Form(""), settings: Settings = Depends(get_sett
 
 
 @router.post("/jobs/tts", dependencies=[Depends(require_auth)])
-def create_tts_job(text: str = Form(""), settings: Settings = Depends(get_settings)):
+def create_tts_job(
+    text: str = Form(""),
+    language_id: str = Form(""),
+    voice_id: str = Form(""),
+    settings: Settings = Depends(get_settings),
+):
     text = text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
     if len(text) > settings.max_tts_text_length:
         raise HTTPException(status_code=400, detail="Text exceeds configured length limit")
-    JobRepository(settings).create_job(JOB_TTS, input_text=text)
+    try:
+        voice = settings.get_tts_voice(voice_id, language_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from None
+    payload = json.dumps({"text": text, "language_id": voice.language_id, "voice_id": voice.id}, ensure_ascii=False)
+    JobRepository(settings).create_job(JOB_TTS, input_text=payload)
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/jobs", dependencies=[Depends(require_page_auth)])
-def jobs_fragment(request: Request, settings: Settings = Depends(get_settings)):
+def jobs_fragment(
+    request: Request,
+    page: int = Query(1, ge=1),
+    settings: Settings = Depends(get_settings),
+):
     repository = JobRepository(settings)
-    jobs = repository.list_jobs()
+    page_size = 10
+    total_jobs = repository.count_jobs()
+    total_pages = max(1, ceil(total_jobs / page_size))
+    current_page = min(page, total_pages)
+    jobs = repository.list_jobs(limit=page_size, offset=(current_page - 1) * page_size)
     files_by_job = {job.id: repository.list_files(job.id) for job in jobs}
     return templates.TemplateResponse(
-        request, "partials/jobs-table.html", {"jobs": jobs, "files_by_job": files_by_job}
+        request,
+        "partials/jobs-table.html",
+        {
+            "jobs": jobs,
+            "files_by_job": files_by_job,
+            "page": current_page,
+            "total_pages": total_pages,
+            "page_size": page_size,
+            "total_jobs": total_jobs,
+        },
     )
 
 

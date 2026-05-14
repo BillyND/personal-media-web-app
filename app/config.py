@@ -9,6 +9,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class TtsVoice:
+    def __init__(
+        self,
+        id: str,
+        label: str,
+        language: str,
+        language_id: str,
+        sample_text: str,
+        model_path: str,
+        config_path: str | None,
+    ) -> None:
+        self.id = id
+        self.label = label
+        self.language = language
+        self.language_id = language_id
+        self.sample_text = sample_text
+        self.model_path = model_path
+        self.config_path = config_path
+
+
 def _bool(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
@@ -50,16 +70,66 @@ class Settings:
             os.getenv("PIPER_BINARY_PATH"), PROJECT_DIR / "runtime" / "bin" / "piper"
         )
         self.piper_voice_path = _project_path(
-            os.getenv("PIPER_VOICE_PATH"), self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx"
+            self._voice_path_env("PIPER_VOICE_PATH", "en_US-ryan-medium.onnx"),
+            self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx",
         )
-        piper_config_path = os.getenv("PIPER_CONFIG_PATH")
         self.piper_config_path = _project_path(
-            piper_config_path, self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx.json"
+            self._voice_path_env("PIPER_CONFIG_PATH", "en_US-ryan-medium.onnx.json"),
+            self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx.json",
         )
         self.max_tts_text_length = int(os.getenv("MAX_TTS_TEXT_LENGTH", "5000"))
+        self.max_preview_bytes = int(os.getenv("MAX_PREVIEW_BYTES", "262144"))
         self.login_max_attempts = int(os.getenv("LOGIN_MAX_ATTEMPTS", "5"))
         self.login_lock_seconds = int(os.getenv("LOGIN_LOCK_SECONDS", "300"))
         self.cookie_secure = _bool(os.getenv("COOKIE_SECURE"), self.app_env == "production")
+        self.tts_voices = self._load_tts_voices()
+        self.default_tts_voice_id = os.getenv("DEFAULT_TTS_VOICE_ID", self.tts_voices[0].id)
+        self.default_tts_language_id = self.get_tts_voice(self.default_tts_voice_id).language_id
+
+    def _voice_path_env(self, key: str, default_name: str) -> str | None:
+        value = os.getenv(key)
+        if not value:
+            return None
+        unsafe_name = "default.onnx.json" if default_name.endswith(".json") else "default.onnx"
+        return None if Path(value).name == unsafe_name else value
+
+    def _load_tts_voices(self) -> list[TtsVoice]:
+        return [
+            TtsVoice(
+                id="en_US-ryan-medium",
+                label="Ryan",
+                language="English",
+                language_id="en",
+                sample_text="Hello, this is a local English voice.",
+                model_path=self.piper_voice_path,
+                config_path=self.piper_config_path,
+            ),
+            TtsVoice(
+                id="vi_VN-vais1000-medium",
+                label="VAIS1000",
+                language="Tiếng Việt",
+                language_id="vi",
+                sample_text="Xin chào, đây là giọng tiếng Việt chạy cục bộ.",
+                model_path=_project_path(None, self.data_dir / "models" / "piper" / "vi_VN-vais1000-medium.onnx"),
+                config_path=_project_path(None, self.data_dir / "models" / "piper" / "vi_VN-vais1000-medium.onnx.json"),
+            ),
+        ]
+
+    @property
+    def tts_languages(self) -> list[dict[str, str]]:
+        languages: dict[str, str] = {}
+        for voice in self.tts_voices:
+            languages.setdefault(voice.language_id, voice.language)
+        return [{"id": key, "label": label} for key, label in languages.items()]
+
+    def get_tts_voice(self, voice_id: str | None, language_id: str | None = None) -> TtsVoice:
+        selected_id = voice_id or self.default_tts_voice_id
+        for voice in self.tts_voices:
+            if voice.id == selected_id:
+                if language_id and voice.language_id != language_id:
+                    raise ValueError("TTS voice does not match selected language")
+                return voice
+        raise ValueError("Unsupported TTS voice")
 
     def ensure_ready(self) -> None:
         if not self.session_secret:

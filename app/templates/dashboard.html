@@ -3,35 +3,76 @@
 {% block content %}
 <header class="topbar">
   <div>
-    <h1>Personal Media</h1>
-    <p>TikTok → MP4/MP3/Text và Text-to-Speech local.</p>
+    <p class="eyebrow">Personal media studio</p>
+    <h1>Convert, transcribe, voiceover</h1>
+    <p>TikTok → MP4/MP3/Text và Text-to-Speech local/free.</p>
   </div>
-  <form method="post" action="/logout"><button class="secondary" type="submit">Logout</button></form>
+  <form method="post" action="/logout"><button class="button ghost" type="submit">Logout</button></form>
 </header>
 
-<section class="grid">
-  <article class="card">
-    <h2>TikTok Extractor</h2>
-    <p class="muted">Best-effort clean source, không cam kết mọi video đều no watermark.</p>
+<section class="hero-grid">
+  <article class="card feature-card accent-card">
+    <div class="card-heading">
+      <div>
+        <p class="eyebrow">TikTok extractor</p>
+        <h2>Link vào, file ra</h2>
+      </div>
+      <span class="pill">Best effort</span>
+    </div>
+    <p class="muted">Tạo MP4, MP3 và transcript. No-watermark phụ thuộc nguồn TikTok.</p>
     <form method="post" action="/jobs/tiktok" class="stack">
-      <input name="url" type="url" placeholder="https://www.tiktok.com/..." required>
-      <button type="submit">Tạo MP4 / MP3 / Text</button>
+      <label for="tiktok-url">TikTok URL</label>
+      <input id="tiktok-url" name="url" type="url" placeholder="https://www.tiktok.com/..." required>
+      <button type="submit" class="button primary">Tạo MP4 / MP3 / Text</button>
     </form>
   </article>
 
-  <article class="card">
-    <h2>Text to Speech</h2>
-    <p class="muted">Local/free bằng Piper. MVP xuất MP3.</p>
+  <article class="card feature-card">
+    <div class="card-heading">
+      <div>
+        <p class="eyebrow">Text to Speech</p>
+        <h2>Voiceover local</h2>
+      </div>
+      <span class="pill">Piper</span>
+    </div>
+    <p class="muted">Chọn ngôn ngữ và giọng đầu ra. Lựa chọn được lưu trên máy bằng localStorage.</p>
     <form method="post" action="/jobs/tts" class="stack">
-      <textarea name="text" rows="8" placeholder="Nhập text làm voiceover..." required></textarea>
-      <button type="submit">Tạo MP3</button>
+      <div class="form-grid">
+        <div class="field">
+          <label for="tts-language">Ngôn ngữ</label>
+          <select id="tts-language" name="language_id" data-local-storage-key="ttsLanguageId">
+            {% for language in tts_languages %}
+              <option value="{{ language.id }}" {% if language.id == default_tts_language_id %}selected{% endif %}>{{ language.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="tts-voice">Giọng</label>
+          <select id="tts-voice" name="voice_id" data-local-storage-key="ttsVoiceId">
+            {% for voice in tts_voices %}
+              <option value="{{ voice.id }}" data-language-id="{{ voice.language_id }}" data-sample-text="{{ voice.sample_text }}" {% if voice.id == default_tts_voice_id %}selected{% endif %}>{{ voice.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <p class="helper-text" data-tts-sample></p>
+      <label for="tts-text">Voiceover text</label>
+      <textarea id="tts-text" name="text" rows="8" placeholder="Nhập text làm voiceover..." required></textarea>
+      <button type="submit" class="button primary">Tạo MP3</button>
     </form>
   </article>
 </section>
 
-<section class="card">
-  <h2>Jobs / History</h2>
-  <div id="jobs-table" data-refresh-url="/jobs">
+<section class="card history-card">
+  <div class="section-header">
+    <div>
+      <p class="eyebrow">Jobs / History</p>
+      <h2>Preview trước, tải sau</h2>
+      <p class="muted">Xem video, nghe audio, đọc text trực tiếp trong app.</p>
+    </div>
+    <span class="pill">{{ total_jobs }} jobs</span>
+  </div>
+  <div id="jobs-table" data-refresh-url="/jobs?page={{ page }}" aria-live="polite">
     {% include "partials/jobs-table.html" %}
   </div>
 </section>

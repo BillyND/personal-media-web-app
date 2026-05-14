@@ -48,7 +48,8 @@ def process_tiktok_job(job: Job, repository: JobRepository, settings: Settings) 
 
 
 def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> None:
-    text = (job.input_text or "").strip()
+    text, voice_id = parse_tts_payload(job.input_text)
+    voice = settings.get_tts_voice(voice_id)
     if not text:
         raise ValueError("Text is required")
     if len(text) > settings.max_tts_text_length:
@@ -61,13 +62,35 @@ def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> 
     metadata_path = output_dir / "metadata.json"
 
     input_path.write_text(text, encoding="utf-8")
-    synthesize_with_piper(text, wav_path, settings)
+    synthesize_with_piper(text, wav_path, settings, voice.model_path, voice.config_path)
     convert_wav_to_mp3(wav_path, mp3_path, settings.command_timeout_seconds)
     metadata_path.write_text(
-        json.dumps({"type": "tts", "voice": settings.piper_voice_path, "text_length": len(text)}, indent=2),
+        json.dumps(
+            {
+                "type": "tts",
+                "voice_id": voice.id,
+                "voice": voice.label,
+                "language": voice.language,
+                "text_length": len(text),
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
 
     repository.add_file(job.id, "input", input_path)
     repository.add_file(job.id, "audio", mp3_path)
     repository.add_file(job.id, "metadata", metadata_path)
+
+
+def parse_tts_payload(input_text: str | None) -> tuple[str, str | None]:
+    raw = (input_text or "").strip()
+    if not raw:
+        return "", None
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw, None
+    if not isinstance(payload, dict):
+        return raw, None
+    return str(payload.get("text", "")).strip(), payload.get("voice_id")

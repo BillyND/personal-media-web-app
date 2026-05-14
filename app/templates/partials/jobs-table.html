@@ -1,25 +1,39 @@
-<table>
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Status</th>
-      <th>Created</th>
-      <th>Result</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for job in jobs %}
-    <tr>
-      <td>{{ job.type }}</td>
-      <td><span class="badge {{ job.status }}">{{ job.status }}</span></td>
-      <td>{{ job.created_at }}</td>
-      <td>
-        {% set files = files_by_job.get(job.id, []) %}
-        {% include "partials/job-detail.html" %}
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4" class="muted">Chưa có job nào.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="jobs-list">
+  {% for job in jobs %}
+  <article class="job-card">
+    <div class="job-meta">
+      <div>
+        <span class="badge {{ job.status }}">{{ job.status }}</span>
+        <h3>{{ job.type|upper }} job</h3>
+        <p class="muted">{{ job.created_at }}</p>
+      </div>
+      <code>{{ job.id[:8] }}</code>
+    </div>
+    <div class="job-result">
+      {% set files = files_by_job.get(job.id, []) %}
+      {% include "partials/job-detail.html" %}
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state">
+    <h3>Chưa có job nào</h3>
+    <p class="muted">Dán TikTok link hoặc nhập text để bắt đầu.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="Jobs pagination">
+  {% if page > 1 %}
+    <a class="button ghost small" href="/?page={{ page - 1 }}" data-jobs-page="{{ page - 1 }}">← Trước</a>
+  {% else %}
+    <span class="button ghost small disabled">← Trước</span>
+  {% endif %}
+  <span class="page-indicator">Trang {{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a class="button ghost small" href="/?page={{ page + 1 }}" data-jobs-page="{{ page + 1 }}">Sau →</a>
+  {% else %}
+    <span class="button ghost small disabled">Sau →</span>
+  {% endif %}
+</nav>
+{% endif %}

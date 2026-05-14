@@ -1,11 +1,32 @@
 {% if job.status == 'done' %}
-  <div class="files">
+  <div class="preview-grid">
   {% for file in files %}
-    <a href="/files/{{ file.id }}">{{ file.kind }}</a>
+    {% set lower_path = file.path|lower %}
+    <section class="preview-card">
+      <div class="preview-title">
+        <strong>{{ file.kind }}</strong>
+        <a class="button download small" href="/files/{{ file.id }}">Tải xuống</a>
+      </div>
+      {% if file.kind == 'video' or lower_path.endswith('.mp4') or lower_path.endswith('.webm') or lower_path.endswith('.mov') %}
+        <video controls preload="metadata" src="/files/{{ file.id }}/preview"></video>
+      {% elif file.kind == 'audio' or lower_path.endswith('.mp3') or lower_path.endswith('.wav') %}
+        <audio controls preload="metadata" src="/files/{{ file.id }}/preview"></audio>
+      {% elif file.kind in ['transcript', 'input', 'metadata'] or lower_path.endswith('.txt') or lower_path.endswith('.json') %}
+        <details class="text-preview">
+          <summary>Xem nội dung</summary>
+          <pre data-text-preview-url="/files/{{ file.id }}/preview">Đang tải nội dung...</pre>
+        </details>
+      {% else %}
+        <p class="muted">File này chỉ hỗ trợ tải xuống.</p>
+      {% endif %}
+    </section>
   {% endfor %}
   </div>
 {% elif job.status == 'failed' %}
-  <span class="error">{{ job.error_message }}</span>
+  <div class="inline-error">{{ job.error_message }}</div>
 {% else %}
-  <span class="muted">Đang xử lý...</span>
+  <div class="processing-state">
+    <span class="spinner"></span>
+    <span>Đang xử lý...</span>
+  </div>
 {% endif %}

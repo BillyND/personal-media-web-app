@@ -52,3 +52,23 @@ def test_stale_processing_jobs_are_failed(tmp_path, monkeypatch):
 
     assert repository.fail_stale_processing(5) == 1
     assert repository.get_job(job.id).status == "failed"
+
+
+def test_jobs_pagination(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("OUTPUT_DIR", str(tmp_path / "outputs"))
+    monkeypatch.setenv("APP_PASSWORD", "secret")
+    monkeypatch.setenv("SESSION_SECRET", "test-secret")
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+    settings = get_settings()
+    settings.ensure_ready()
+    init_db()
+    repository = JobRepository(settings)
+    for index in range(12):
+        repository.create_job(JOB_TTS, input_text=f"job {index}")
+
+    assert repository.count_jobs() == 12
+    assert len(repository.list_jobs(limit=10, offset=0)) == 10
+    assert len(repository.list_jobs(limit=10, offset=10)) == 2
