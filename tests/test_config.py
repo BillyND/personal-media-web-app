@@ -40,3 +40,12 @@ def test_production_rejects_malformed_password_hash(monkeypatch):
     settings = Settings()
     with pytest.raises(RuntimeError):
         settings.ensure_ready()
+
+
+def test_auto_delete_defaults_to_30_seconds(monkeypatch):
+    monkeypatch.delenv("AUTO_DELETE_SECONDS", raising=False)
+    monkeypatch.delenv("AUTO_DELETE_DAYS", raising=False)
+    monkeypatch.setenv("APP_PASSWORD", "secret")
+    monkeypatch.setenv("SESSION_SECRET", "test-secret")
+    settings = Settings()
+    assert settings.auto_delete_seconds == 30

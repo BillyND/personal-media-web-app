@@ -28,6 +28,9 @@ dev = [
   "httpx>=0.27.0",
   "pytest>=8.0.0"
 ]
+vieneu = [
+  "vieneu"
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

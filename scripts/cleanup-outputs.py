@@ -6,8 +6,8 @@ import shutil
 
 def main() -> None:
     output_dir = Path(os.getenv("OUTPUT_DIR", "./data/outputs")).resolve()
-    days = int(os.getenv("AUTO_DELETE_DAYS", "30"))
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    seconds = int(os.getenv("AUTO_DELETE_SECONDS", os.getenv("AUTO_DELETE_DAYS", "30")))
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=seconds)
     if not output_dir.exists():
         return
     for child in output_dir.iterdir():

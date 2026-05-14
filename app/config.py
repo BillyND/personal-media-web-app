@@ -17,14 +17,16 @@ class TtsVoice:
         language: str,
         language_id: str,
         sample_text: str,
-        model_path: str,
-        config_path: str | None,
+        engine: str = "piper",
+        model_path: str | None = None,
+        config_path: str | None = None,
     ) -> None:
         self.id = id
         self.label = label
         self.language = language
         self.language_id = language_id
         self.sample_text = sample_text
+        self.engine = engine
         self.model_path = model_path
         self.config_path = config_path
 
@@ -63,7 +65,7 @@ class Settings:
         self.max_download_bytes = int(os.getenv("MAX_DOWNLOAD_BYTES", "524288000"))
         self.command_timeout_seconds = int(os.getenv("COMMAND_TIMEOUT_SECONDS", "300"))
         self.job_stale_minutes = int(os.getenv("JOB_STALE_MINUTES", "120"))
-        self.auto_delete_days = int(os.getenv("AUTO_DELETE_DAYS", "30"))
+        self.auto_delete_seconds = int(os.getenv("AUTO_DELETE_SECONDS", os.getenv("AUTO_DELETE_DAYS", "30")))
         self.whisper_model = os.getenv("WHISPER_MODEL", "base")
         self.whisper_compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
         self.piper_binary_path = _project_path(
@@ -78,6 +80,7 @@ class Settings:
             self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx.json",
         )
         self.max_tts_text_length = int(os.getenv("MAX_TTS_TEXT_LENGTH", "5000"))
+        self.vieneu_emotion = os.getenv("VIENEU_EMOTION", "natural")
         self.max_preview_bytes = int(os.getenv("MAX_PREVIEW_BYTES", "262144"))
         self.login_max_attempts = int(os.getenv("LOGIN_MAX_ATTEMPTS", "5"))
         self.login_lock_seconds = int(os.getenv("LOGIN_LOCK_SECONDS", "300"))
@@ -112,6 +115,30 @@ class Settings:
                 sample_text="Xin chào, đây là giọng tiếng Việt chạy cục bộ.",
                 model_path=_project_path(None, self.data_dir / "models" / "piper" / "vi_VN-vais1000-medium.onnx"),
                 config_path=_project_path(None, self.data_dir / "models" / "piper" / "vi_VN-vais1000-medium.onnx.json"),
+            ),
+            TtsVoice(
+                id="vieneu:binh",
+                label="Bình · nam Bắc",
+                language="Tiếng Việt",
+                language_id="vi",
+                sample_text="Xin chào, tôi đang đọc bằng giọng nam miền Bắc tự nhiên.",
+                engine="vieneu",
+            ),
+            TtsVoice(
+                id="vieneu:tuyen",
+                label="Tuyên · nam Bắc",
+                language="Tiếng Việt",
+                language_id="vi",
+                sample_text="Xin chào, tôi đang đọc bằng giọng nam miền Bắc có nhấn nhá.",
+                engine="vieneu",
+            ),
+            TtsVoice(
+                id="vieneu:nguyen",
+                label="Nguyên · nam Nam",
+                language="Tiếng Việt",
+                language_id="vi",
+                sample_text="Xin chào, tôi đang đọc bằng giọng nam miền Nam tự nhiên.",
+                engine="vieneu",
             ),
         ]
 

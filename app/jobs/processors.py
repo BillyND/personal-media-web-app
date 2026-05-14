@@ -9,6 +9,7 @@ from app.media.audio_converter import convert_wav_to_mp3, extract_mp3
 from app.media.piper_tts import synthesize_with_piper
 from app.media.tiktok_downloader import download_tiktok_video, validate_tiktok_url
 from app.media.transcriber import transcribe_audio
+from app.media.vieneu_tts import synthesize_with_vieneu
 
 
 def process_job(job: Job, repository: JobRepository, settings: Settings | None = None) -> None:
@@ -64,7 +65,10 @@ def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> 
     metadata_path = output_dir / "metadata.json"
 
     input_path.write_text(text, encoding="utf-8")
-    synthesize_with_piper(text, wav_path, settings, voice.model_path, voice.config_path)
+    if voice.engine == "vieneu":
+        synthesize_with_vieneu(text, wav_path, voice.id, settings)
+    else:
+        synthesize_with_piper(text, wav_path, settings, voice.model_path, voice.config_path)
     convert_wav_to_mp3(wav_path, mp3_path, settings.command_timeout_seconds)
     metadata_path.write_text(
         json.dumps(
@@ -73,6 +77,7 @@ def process_tts_job(job: Job, repository: JobRepository, settings: Settings) -> 
                 "voice_id": voice.id,
                 "voice": voice.label,
                 "language": voice.language,
+                "engine": voice.engine,
                 "text_length": len(text),
             },
             indent=2,
