@@ -19,7 +19,15 @@ def _sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _project_path(value: str | None, fallback: Path) -> str:
+    path = Path(value) if value else fallback
+    if not path.is_absolute():
+        path = PROJECT_DIR / path
+    return str(path)
+
+
 UNSAFE_PASSWORD_HASHES = {_sha256(value) for value in {"change-me", "password", "secret"}}
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings:
@@ -38,9 +46,16 @@ class Settings:
         self.auto_delete_days = int(os.getenv("AUTO_DELETE_DAYS", "30"))
         self.whisper_model = os.getenv("WHISPER_MODEL", "base")
         self.whisper_compute_type = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
-        self.piper_binary_path = os.getenv("PIPER_BINARY_PATH", "piper")
-        self.piper_voice_path = os.getenv("PIPER_VOICE_PATH", "./data/models/piper/default.onnx")
-        self.piper_config_path = os.getenv("PIPER_CONFIG_PATH") or None
+        self.piper_binary_path = _project_path(
+            os.getenv("PIPER_BINARY_PATH"), PROJECT_DIR / "runtime" / "bin" / "piper"
+        )
+        self.piper_voice_path = _project_path(
+            os.getenv("PIPER_VOICE_PATH"), self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx"
+        )
+        piper_config_path = os.getenv("PIPER_CONFIG_PATH")
+        self.piper_config_path = _project_path(
+            piper_config_path, self.data_dir / "models" / "piper" / "en_US-ryan-medium.onnx.json"
+        )
         self.max_tts_text_length = int(os.getenv("MAX_TTS_TEXT_LENGTH", "5000"))
         self.login_max_attempts = int(os.getenv("LOGIN_MAX_ATTEMPTS", "5"))
         self.login_lock_seconds = int(os.getenv("LOGIN_LOCK_SECONDS", "300"))
